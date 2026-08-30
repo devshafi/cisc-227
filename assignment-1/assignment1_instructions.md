@@ -15,19 +15,19 @@ Groups are two members, and the rules for choosing a project (shared
 separately, to keep the process fair and avoid everyone piling onto the same
 one) will be announced before this assignment starts.
 
-Find your domain's materials in [assignment-1/library-management/](assignment-1/library-management/),
-[assignment-1/inventory-management/](assignment-1/inventory-management/), or
-[assignment-1/equipment-rental-management/](assignment-1/equipment-rental-management/):
+Find your domain's materials in [assignment-1/library-management/](https://github.com/devshafi/cisc-227/tree/main/assignment-1/library-management/),
+[assignment-1/inventory-management/](https://github.com/devshafi/cisc-227/tree/main/assignment-1/inventory-management/), or
+[assignment-1/equipment-rental-management/](https://github.com/devshafi/cisc-227/tree/main/assignment-1/equipment-rental-management/):
 - `scenario_brief.md`: the (intentionally incomplete) client brief
 - `role_cards/`: one card per stakeholder role (there are 3 role cards per domain)
-- Shared: [quality_check_worksheet.md](assignment-1/quality_check_worksheet.md), [prework_checklist.md](assignment-1/prework_checklist.md)
+- Shared: [quality_check_worksheet.md](https://github.com/devshafi/cisc-227/blob/main/assignment-1/quality_check_worksheet.md), [prework_checklist.md](https://github.com/devshafi/cisc-227/blob/main/assignment-1/prework_checklist.md)
 
 Once your group picks a domain, you stay on it for every assignment this term.
 
 ## Steps
 
 1. **Pre-work** (individual, before the group session): complete
-   [prework_checklist.md](assignment-1/prework_checklist.md) (editor, git, GitHub account, repo, TA invited).
+   [prework_checklist.md](https://github.com/devshafi/cisc-227/blob/main/assignment-1/prework_checklist.md) (editor, git, GitHub account, repo, TA invited).
 
 2. **Read the scenario brief** for your chosen domain as a group. Do not read
    the other domain's materials or role cards; only its scenario brief is fair
