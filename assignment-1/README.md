@@ -84,7 +84,7 @@ Once your group picks a domain, you stay on it for every assignment this term.
 5. Final requirements list
 6. Pre-work checklist confirmation (repo link, TA invited)
 
-## Suggested grading scheme
+## Grading Scheme
 
 | Component | Marks |
 |---|---|
