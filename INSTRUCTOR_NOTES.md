@@ -3,43 +3,145 @@
 ## Intentional gaps and bugs
 
 All three reference apps are deliberately incomplete/buggy to support later assignments
-(A2 requirements-vs-implementation gap analysis; A3 unit testing, mocking, coverage).
-The third project (Equipment Rental Management) was added 2026-08-30 to spread 180+
-students' groups across three domains instead of two.
+(A2 requirements-vs-implementation verification and unit testing; A3 unit testing,
+mocking, coverage). The third project (Equipment Rental Management) was added
+2026-08-30 to spread 180+ students' groups across three domains instead of two.
 
-### Missing features (by design, not bugs)
+---
 
-- **LMS**: no Reservation/Hold, no Overdue Fine calculation. Stakeholder role cards
-  in `assignment-1/library-management/role_cards/` ask for these, so students should
-  surface them as unmet requirements in Assignment 2.
-- **IMS**: no Purchase Order, no low-stock reorder alert. Role cards in
-  `assignment-1/inventory-management/role_cards/` ask for these similarly.
-- **ERM**: no damage-deposit tracking, no maintenance/out-of-service flag for equipment
-  under repair. Role cards in `assignment-1/equipment-rental-management/role_cards/`
-  ask for these similarly.
+## A2 pivot (2026-08-31)
 
-### Planted bugs (2 per project, mirrored)
+**Design change:** A2 was originally framed as a gap-analysis exercise (find missing
+features). It has been reframed as a testing exercise: the apps are now feature-complete
+relative to what students would elicit in A1, and the grade weight has shifted from
+requirements comparison (3 marks) to unit testing (4 marks). Students are told the app
+is "intended to be feature-complete" and that their job is to verify behaviour — some
+things will not hold up under careful testing, but the frame is testing, not gap hunting.
+
+---
+
+## Features added per project (correct implementations)
+
+### Library Management
+- `GET /books?search=` — case-insensitive substring search on title and author
+- `PUT /loans/<id>/renew` — extends due_date by LOAN_PERIOD_DAYS from the current due_date
+- `POST /reservations` / `GET /reservations` — create and list reservations (book_id + member_id)
+- `Reservation` model: `id, book_id, member_id, reservation_date, fulfilled`
+
+### Inventory Management
+- `reorder_level` field on `Product` (default 0); included in CRUD and `to_dict()`
+- `GET /products/low-stock` — returns products where `quantity_on_hand <= reorder_level`
+- `GET /suppliers/<id>/products` — returns products linked via IN transactions from that supplier
+- `POST /purchase-orders` / `GET /purchase-orders` / `GET /purchase-orders/<id>` — create and list POs
+- `PUT /purchase-orders/<id>/receive` — marks PO received (see bug below)
+- `PurchaseOrder` model: `id, supplier_id, product_id, quantity_ordered, status, created_date, received_date`
+
+### Equipment Rental Management
+- `is_available` field on `Equipment` (default True); included in CRUD and `to_dict()`
+- `PATCH /equipment/<id>/status` — set `is_available` True/False (out-of-service toggle)
+- `GET /equipment/<id>/availability` — returns `is_available`, `available_units`, `total_units`
+- `PUT /rentals/<id>/extend` — extends `due_date` by given number of days
+- `deposit_amount` and `deposit_released` fields on `Rental` (defaults 0.0 / False)
+- `PUT /rentals/<id>/deposit/release` — release deposit hold (see bug below)
+
+---
+
+## Intentional bugs — full inventory
+
+### Original planted bugs (2 per project, unchanged)
 
 **Library Management — `projects/library-management/app/routes/loans.py`**
-1. `checkout_book()` decrements `available_copies` without checking it is `> 0` first,
-   so a book can be checked out more times than copies exist (`available_copies` goes negative).
-2. `list_loans()`: the `member_id` filter branch uses `l.book_id == member_id` instead of
-   `l.member_id == member_id` (copy-paste bug from the `book_id` branch below it).
+1. `checkout_book()` decrements `available_copies` without checking `> 0` first.
+2. `list_loans()`: `member_id` filter uses `l.book_id == member_id` (copy-paste from the `book_id` branch).
 
 **Inventory Management — `projects/inventory-management/app/routes/transactions.py`**
-1. `create_transaction()` decrements `quantity_on_hand` for an `OUT` transaction without
-   checking sufficient stock first, so stock can go negative.
-2. `list_transactions()`: the `product_id` filter branch uses `t.supplier_id == product_id`
-   instead of `t.product_id == product_id` (copy-paste bug from the `supplier_id` branch below it).
+1. `create_transaction()` decrements `quantity_on_hand` for OUT without checking sufficient stock.
+2. `list_transactions()`: `product_id` filter uses `t.supplier_id == product_id` (copy-paste from the `supplier_id` branch).
 
 **Equipment Rental Management — `projects/equipment-rental-management/app/routes/rentals.py`**
-1. `checkout_equipment()` decrements `available_units` without checking it is `> 0` first,
-   so equipment can be checked out more times than units exist (`available_units` goes negative).
-2. `list_rentals()`: the `renter_id` filter branch uses `r.equipment_id == renter_id` instead of
-   `r.renter_id == renter_id` (copy-paste bug from the `equipment_id` branch below it).
+1. `checkout_equipment()` decrements `available_units` without checking `> 0` first.
+2. `list_rentals()`: `renter_id` filter uses `r.equipment_id == renter_id` (copy-paste from the `equipment_id` branch).
 
-These bugs are intended to be caught by the unit tests students write in Assignment 2/3.
-Do not fix them in the reference repos before those assignments are complete.
+Do not fix these before A2/A3 are complete.
+
+---
+
+### New bugs added 2026-08-31 (in newly added features)
+
+**Library Management — 2 new bugs (4 total)**
+
+3. `GET /loans/<id>/fine` (`loans.py`):
+   Uses `date.today()` as the end date for fine calculation even when `loan.return_date`
+   is set. A returned loan should cap its fine at the return date, but that branch is
+   intentionally absent. A test that returns a book before its due date and then calls
+   the fine endpoint will get a non-zero fine when the current date has passed the
+   due_date — the fine keeps accruing even after return.
+   *Student discovery path*: checkout a book with a past due_date, return it, call
+   `GET /loans/<id>/fine` — expect $0.00 (returned before the test runs), get a
+   growing positive amount.
+
+4. `POST /loans` (`loans.py`) + `POST /reservations` (`reservations.py`):
+   `checkout_book()` does not check `store.reservations` for pending reservations on
+   the requested book. Any member can check out a book reserved by another member.
+   *Student discovery path*: create a reservation for member A on book X, then check
+   out book X as member B — expect failure or at minimum a warning, get 201 with the
+   checkout succeeding silently.
+
+**Inventory Management — 1 new bug (3 total)**
+
+3. `PUT /purchase-orders/<id>/receive` (`purchase_orders.py`):
+   Creates a Transaction record (type="IN") in `store.transactions` but does NOT
+   update `product.quantity_on_hand`. The audit trail looks correct but the stock
+   count stays unchanged.
+   *Student discovery path*: create a product with quantity 10, create a PO for 50
+   units, receive it, call `GET /products/<id>/stock-level` — expect 60, get 10.
+
+**Equipment Rental Management — 2 new bugs (4 total)**
+
+3. `PATCH /equipment/<id>/status` + `POST /rentals` (`equipment.py` / `rentals.py`):
+   The status endpoint correctly sets `item.is_available = False`, but
+   `checkout_equipment()` never checks this flag. Out-of-service equipment can still
+   be rented.
+   *Student discovery path*: mark equipment as `is_available: false`, attempt a
+   checkout — expect a 400 error, get 201 with the rental created.
+
+4. `PUT /rentals/<id>/deposit/release` (`rentals.py`):
+   The response body includes `"deposit_released": true` but `rental.deposit_released`
+   is never set to `True` on the object. A subsequent GET on the rental will show
+   `"deposit_released": false`.
+   *Student discovery path*: checkout with a deposit_amount, return the equipment,
+   call the release endpoint (get `true` back), then GET the rental — see
+   `deposit_released` is still `false`.
+
+---
+
+## Grading guidance for unit tests (A2)
+
+Tests are worth 4/10 marks. The key distinction:
+
+- **Shallow test** (max 2/4 for a group): calls one endpoint with valid data, checks
+  only HTTP status code. e.g. `assert response.status_code == 201`.
+- **Meaningful test** (full credit): checks the response body, chains multiple
+  requests, or exercises a boundary/edge case. Students who write tests that expose
+  any of the bugs above should receive full marks for those tests.
+
+The example tests in `tests/test_examples.py` should not be counted — they are
+clearly labelled as scaffolding. If a student submits only those two tests, treat it
+as 0 student-authored functions.
+
+---
+
+## Example tests provided (scaffolding, not student work)
+
+Each project's `tests/test_examples.py` has 2 tests:
+
+| Project | Test 1 | Test 2 |
+|---|---|---|
+| LMS | `GET /books` returns `[]` initially | `POST /books` returns the created book |
+| IMS | `GET /products` returns `[]` initially | `POST /products` + `GET /products/<id>/stock-level` |
+| ERM | `GET /rentals` returns `[]` initially | `POST /equipment` + `GET /equipment/<id>/availability` |
+
+---
 
 ## Storage
 

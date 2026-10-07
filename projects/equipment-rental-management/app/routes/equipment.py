@@ -21,6 +21,7 @@ def create_equipment():
         category=data["category"],
         total_units=data.get("total_units", 1),
         available_units=data.get("total_units", 1),
+        is_available=data.get("is_available", True),
     )
     store.equipment[equipment_id] = item
     return jsonify(item.to_dict()), 201
@@ -44,6 +45,7 @@ def update_equipment(equipment_id):
     item.category = data.get("category", item.category)
     item.total_units = data.get("total_units", item.total_units)
     item.available_units = data.get("available_units", item.available_units)
+    item.is_available = data.get("is_available", item.is_available)
     return jsonify(item.to_dict())
 
 
@@ -53,3 +55,35 @@ def delete_equipment(equipment_id):
     if item is None:
         return jsonify({"error": "Equipment not found"}), 404
     return "", 204
+
+
+@equipment_bp.route("/<int:equipment_id>/status", methods=["PATCH"])
+def set_equipment_status(equipment_id):
+    """Mark equipment as available or out-of-service (e.g. under repair).
+
+    Set is_available=false to take a piece of equipment out of service.
+
+    NOTE (intentional bug): checkout_equipment() in rentals.py does NOT check
+    this flag. Out-of-service equipment can still be checked out — a test that
+    marks equipment unavailable and then attempts a checkout will reveal this.
+    """
+    item = store.equipment.get(equipment_id)
+    if item is None:
+        return jsonify({"error": "Equipment not found"}), 404
+    data = request.get_json()
+    item.is_available = data["is_available"]
+    return jsonify(item.to_dict())
+
+
+@equipment_bp.route("/<int:equipment_id>/availability", methods=["GET"])
+def get_availability(equipment_id):
+    """Return availability summary for a single piece of equipment."""
+    item = store.equipment.get(equipment_id)
+    if item is None:
+        return jsonify({"error": "Equipment not found"}), 404
+    return jsonify({
+        "equipment_id": item.id,
+        "is_available": item.is_available,
+        "available_units": item.available_units,
+        "total_units": item.total_units,
+    })

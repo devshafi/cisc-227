@@ -45,3 +45,23 @@ def delete_supplier(supplier_id):
     if supplier is None:
         return jsonify({"error": "Supplier not found"}), 404
     return "", 204
+
+
+@suppliers_bp.route("/<int:supplier_id>/products", methods=["GET"])
+def supplier_products(supplier_id):
+    """Return all products that have been received (IN transactions) from this supplier."""
+    supplier = store.suppliers.get(supplier_id)
+    if supplier is None:
+        return jsonify({"error": "Supplier not found"}), 404
+
+    product_ids = {
+        t.product_id
+        for t in store.transactions.values()
+        if t.supplier_id == supplier_id and t.type == "IN"
+    }
+    products = [
+        store.products[pid].to_dict()
+        for pid in product_ids
+        if pid in store.products
+    ]
+    return jsonify(products)

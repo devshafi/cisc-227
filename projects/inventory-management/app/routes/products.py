@@ -11,6 +11,16 @@ def list_products():
     return jsonify([p.to_dict() for p in store.products.values()])
 
 
+@products_bp.route("/low-stock", methods=["GET"])
+def low_stock():
+    """Return products where quantity_on_hand is at or below their reorder_level."""
+    flagged = [
+        p for p in store.products.values()
+        if p.quantity_on_hand <= p.reorder_level
+    ]
+    return jsonify([p.to_dict() for p in flagged])
+
+
 @products_bp.route("", methods=["POST"])
 def create_product():
     data = request.get_json()
@@ -21,6 +31,7 @@ def create_product():
         sku=data["sku"],
         unit_price=data.get("unit_price", 0.0),
         quantity_on_hand=data.get("quantity_on_hand", 0),
+        reorder_level=data.get("reorder_level", 0),
     )
     store.products[product_id] = product
     return jsonify(product.to_dict()), 201
@@ -44,6 +55,7 @@ def update_product(product_id):
     product.sku = data.get("sku", product.sku)
     product.unit_price = data.get("unit_price", product.unit_price)
     product.quantity_on_hand = data.get("quantity_on_hand", product.quantity_on_hand)
+    product.reorder_level = data.get("reorder_level", product.reorder_level)
     return jsonify(product.to_dict())
 
 

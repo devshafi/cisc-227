@@ -9,8 +9,9 @@ program, while still separating storage from the route/model code.
 products = {}
 suppliers = {}
 transactions = {}
+purchase_orders = {}
 
-_next_ids = {"product": 1, "supplier": 1, "transaction": 1}
+_next_ids = {"product": 1, "supplier": 1, "transaction": 1, "purchase_order": 1}
 
 
 def next_id(kind):
@@ -24,4 +25,5 @@ def reset():
     products.clear()
     suppliers.clear()
     transactions.clear()
-    _next_ids.update(product=1, supplier=1, transaction=1)
+    purchase_orders.clear()
+    _next_ids.update(product=1, supplier=1, transaction=1, purchase_order=1)

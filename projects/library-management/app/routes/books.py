@@ -8,7 +8,11 @@ books_bp = Blueprint("books", __name__, url_prefix="/books")
 
 @books_bp.route("", methods=["GET"])
 def list_books():
-    return jsonify([b.to_dict() for b in store.books.values()])
+    results = list(store.books.values())
+    search = request.args.get("search", "").lower()
+    if search:
+        results = [b for b in results if search in b.title.lower() or search in b.author.lower()]
+    return jsonify([b.to_dict() for b in results])
 
 
 @books_bp.route("", methods=["POST"])

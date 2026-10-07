@@ -6,9 +6,14 @@ In this assignment, you will get the reference application for your chosen
 project (Library Management, Inventory Management, or Equipment Rental
 Management) running on your own machines, bring it into the GitHub repo your
 group created in Assignment 1, and start working on it as a team using
-feature branches. You will then check how many of the requirements from your
-Assignment 1 final list are actually implemented by the running application,
-and write unit tests (using pytest) for the functions that are implemented.
+feature branches. You will then verify how well the running application
+matches the requirements your group elicited in Assignment 1, and write unit
+tests (using pytest) that confirm — or challenge — your findings.
+
+The reference app is intended to be feature-complete. Your job is not to find
+what is missing: it is to verify that what is there actually behaves the way
+your requirements say it should. Some things may not hold up under careful
+testing. That's the point of this exercise.
 
 ## Steps
 
@@ -77,32 +82,37 @@ and classify each requirement as:
 - **Partially implemented**: some of it works, but part is missing or wrong.
 - **Not implemented**: there's no corresponding functionality in the app.
 
-For each entry, note what you actually did to test it (the request you sent,
-the button you clicked, the response you got) as evidence. You are expected
-to find gaps: some requirements from your role-play (especially the ones
-tied to features stakeholders wanted) will not be implemented at all. That's
-the point of this exercise, not a mistake in the reference app.
+For each entry, note what you actually did to check it: the request you sent,
+the button you clicked, the response you got. Go beyond the happy path —
+think about edge cases and sequences of operations your requirements imply.
+Does the app handle unusual inputs the way your requirement says it should?
+Does a multi-step workflow (e.g. create, then act on what you created) leave
+the system in the state you expect? Discrepancies between expected and actual
+behaviour — even when a feature appears to exist — are worth documenting, and
+are what your tests in Step 5 should target.
 
 ### 5. Unit testing with pytest
 
-The project's `tests/` folder already contains a `conftest.py` with a
-`client` fixture: a Flask test client, wired up so the in-memory data store
-is reset before and after every test. You can use it directly:
+The project's `tests/` folder contains a `conftest.py` and a `test_examples.py`
+file. Read `test_examples.py` first — it shows two test patterns you will use
+throughout this assignment:
 
-```python
-def test_list_books_starts_empty(client):
-    response = client.get("/books")
-    assert response.status_code == 200
-    assert response.get_json() == []
-```
+1. **Empty-list check**: confirm an endpoint returns an empty list before any
+   data is added.
+2. **Create-then-verify**: POST something, then GET or act on it and assert
+   the result matches what you expect.
 
-**Each member must write pytest tests for at least 2 different functions**
-(route handlers or model methods) that your comparison in Step 4 confirmed
-are actually implemented. Do not write tests for missing features. Pick
-functions you think are worth testing, not just the easiest ones; a test
-that never fails because it barely checks anything doesn't count for much.
-Put your tests in their own file (for example `tests/test_<yourname>.py`) on
-your own branch.
+These example tests are scaffolding. **Do not count them toward your required
+test functions** — write your own in a new file (e.g. `tests/test_<yourname>.py`).
+
+**Each member must write pytest tests for at least 2 different functions** on
+their own branch. Choose functions that your Step 4 comparison confirmed are
+implemented, and test beyond the happy path. A test that calls one endpoint
+with valid input and checks only the HTTP status code is not sufficient on its
+own. Good tests check what the data looks like after an operation, what
+happens when you chain two operations together, and what happens at boundaries
+(e.g. what if the thing you're acting on doesn't exist? what if a quantity is
+at its limit?).
 
 Run your tests locally before opening your pull request:
 
@@ -115,20 +125,21 @@ pytest
 1. GitHub repo with the project code, `main` branch containing both members'
    merged work, and a visible commit history showing individual branches and
    pull requests. Your TA will run `main` to grade this assignment.
-2. Requirements-vs-implementation comparison table (completed).
+2. Requirements-vs-implementation comparison table (completed), with evidence
+   for each row (what you sent, what you got back).
 3. pytest test files (at least 2 functions per member, 4+ total for the
-   group).
+   group), in your own named files under `tests/`.
 4. A short PDF submitted to OnQ containing: a link to your GitHub repo, the
    completed comparison table, and a brief summary of which functions you
-   each tested and why.
+   each tested, why you chose them, and what your tests revealed.
 
-## Suggested grading scheme (out of 10)
+## Grading Scheme
 
 | Component | Marks |
 |---|---|
 | Environment set up, app runs, project pushed to group repo | 1 |
 | Branching workflow followed (individual branches, pull requests, `main` up to date and runnable) | 2 |
-| Requirements-vs-implementation comparison (accuracy and completeness) | 3 |
-| Unit tests (at least 2 meaningful functions per member) | 3 |
+| Requirements-vs-implementation comparison (accuracy, evidence, edge cases noted) | 2 |
+| Unit tests (at least 2 meaningful functions per member, including edge-case or multi-step scenarios) | 4 |
 | Submission quality (PDF, repo link, organization) | 1 |
 | **Total** | **10** |
